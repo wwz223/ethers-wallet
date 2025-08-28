@@ -4,7 +4,7 @@ import { SearchOutlined, LinkOutlined, WalletOutlined } from '@ant-design/icons'
 
 const { Title, Text } = Typography
 
-function Query() {
+function Query({ wallet }) {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [queryResult, setQueryResult] = useState(null)

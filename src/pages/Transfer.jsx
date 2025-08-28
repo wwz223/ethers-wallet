@@ -1,24 +1,57 @@
 import { useState } from 'react'
-import { Card, Form, Input, Button, Typography, Alert, Space } from 'antd'
+import { Card, Form, Input, Button, Typography, Alert, Space, message } from 'antd'
 import { WalletOutlined, SendOutlined } from '@ant-design/icons'
+import { ethers } from 'ethers'
 
 const { Title, Text } = Typography
 
-function Transfer() {
+function Transfer({ wallet }) {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [txHash, setTxHash] = useState('')
   
   const handleTransfer = async (values) => {
+    if (!wallet) {
+      message.error('请先连接钱包')
+      return
+    }
+
     setLoading(true)
     try {
-      // 这里将实现转账逻辑
-      console.log('Transfer values:', values)
-      // 模拟延迟
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      setTxHash('0x1234567890abcdef...')
+      const provider = new ethers.BrowserProvider(window.ethereum)
+      const signer = await provider.getSigner()
+      
+      // 准备交易参数
+      const tx = {
+        to: values.to,
+        value: ethers.parseEther(values.amount),
+        gasLimit: 21000
+      }
+
+      // 如果有备注，添加到data字段
+      if (values.memo) {
+        tx.data = ethers.toUtf8Bytes(values.memo)
+        tx.gasLimit = 25000 // 增加gas限制以容纳data
+      }
+
+      // 发送交易
+      const transaction = await signer.sendTransaction(tx)
+      message.success('交易已提交，等待确认...')
+      
+      // 等待交易确认
+      const receipt = await transaction.wait()
+      setTxHash(receipt.hash)
+      message.success('转账成功！')
+      
     } catch (error) {
       console.error('Transfer failed:', error)
+      if (error.code === 4001) {
+        message.error('用户拒绝了交易')
+      } else if (error.code === 'INSUFFICIENT_FUNDS') {
+        message.error('余额不足')
+      } else {
+        message.error(`转账失败: ${error.message}`)
+      }
     } finally {
       setLoading(false)
     }
@@ -41,7 +74,23 @@ function Transfer() {
             </Text>
           </div>
 
-          <Card style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+          {!wallet && (
+            <Alert
+              message="需要连接钱包"
+              description="请在页面右上角连接您的MetaMask钱包才能进行转账操作"
+              type="warning"
+              showIcon
+              style={{ marginBottom: '24px', borderRadius: '8px' }}
+            />
+          )}
+
+          <Card 
+            style={{ 
+              borderRadius: '12px', 
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              opacity: wallet ? 1 : 0.6
+            }}
+          >
             <Form
               form={form}
               layout="vertical"
@@ -96,6 +145,7 @@ function Transfer() {
                   type="primary" 
                   htmlType="submit" 
                   loading={loading}
+                  disabled={!wallet}
                   size="large"
                   block
                   icon={<SendOutlined />}
@@ -106,7 +156,7 @@ function Transfer() {
                     fontWeight: 500
                   }}
                 >
-                  {loading ? '处理中...' : '发起转账'}
+                  {loading ? '处理中...' : !wallet ? '请先连接钱包' : '发起转账'}
                 </Button>
               </Form.Item>
             </Form>
@@ -119,7 +169,13 @@ function Transfer() {
                     <Text style={{ wordBreak: 'break-all' }}>
                       交易哈希: {txHash}
                     </Text>
-                    <Button type="link" size="small">
+                    <Button 
+                      type="link" 
+                      size="small"
+                      href={`https://${wallet?.network?.chainId === 1 ? '' : 'sepolia.'}etherscan.io/tx/${txHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       在Etherscan上查看
                     </Button>
                   </Space>

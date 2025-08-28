@@ -20,6 +20,22 @@
   }
 }
 
+/* Header 钱包组件响应式 */
+@media (max-width: 767px) {
+  .header-wallet-space {
+    margin-right: 8px !important;
+  }
+  
+  .header-wallet-button {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+  
+  .header-wallet-button .anticon {
+    font-size: 12px;
+  }
+}
+
 /* 重置根元素样式 */
 #root {
   margin: 0;

@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
-import { ConfigProvider, Layout, Menu, Drawer, Button } from 'antd'
+import { ConfigProvider, Layout, Menu, Drawer, Button, Space } from 'antd'
 import { HomeOutlined, SendOutlined, SearchOutlined, MenuOutlined } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import Home from './pages/Home'
 import Transfer from './pages/Transfer'
 import Query from './pages/Query'
+import HeaderWallet from './components/HeaderWallet'
 import './App.css'
 
 const { Header, Content } = Layout
@@ -14,6 +15,7 @@ function App() {
   const navigate = useNavigate()
   const location = useLocation()
   const [drawerVisible, setDrawerVisible] = useState(false)
+  const [wallet, setWallet] = useState(null)
 
   const menuItems = [
     {
@@ -44,6 +46,10 @@ function App() {
 
   const onCloseDrawer = () => {
     setDrawerVisible(false)
+  }
+
+  const handleWalletChange = (walletInfo) => {
+    setWallet(walletInfo)
   }
 
   return (
@@ -89,12 +95,17 @@ function App() {
               className="desktop-menu"
             />
             
+            {/* Header Wallet */}
+            <Space style={{ marginLeft: 'auto', marginRight: '16px' }} className="header-wallet-space">
+              <HeaderWallet onWalletChange={handleWalletChange} />
+            </Space>
+            
             {/* Mobile Menu Button */}
             <Button 
               type="text" 
               icon={<MenuOutlined />} 
               onClick={showDrawer}
-              style={{ marginLeft: 'auto', display: 'none' }}
+              style={{ display: 'none' }}
               className="mobile-menu-btn"
             />
           </div>
@@ -119,9 +130,9 @@ function App() {
         
         <Content style={{ backgroundColor: '#f5f5f5', flex: 1 }}>
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/transfer" element={<Transfer />} />
-            <Route path="/query" element={<Query />} />
+            <Route path="/" element={<Home wallet={wallet} />} />
+            <Route path="/transfer" element={<Transfer wallet={wallet} />} />
+            <Route path="/query" element={<Query wallet={wallet} />} />
           </Routes>
         </Content>
       </Layout>

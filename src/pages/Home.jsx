@@ -1,10 +1,11 @@
-import { Card, Typography, Button, Row, Col } from 'antd'
+import { Card, Typography, Button, Row, Col, Space, Alert } from 'antd'
 import { Link } from 'react-router-dom'
 import { RocketOutlined, SearchOutlined } from '@ant-design/icons'
 
 const { Title, Text } = Typography
 
-function Home() {
+function Home({ wallet }) {
+
   return (
     <div className="page-container">
       <div className="container">
@@ -15,7 +16,18 @@ function Home() {
           </Text>
         </div>
         
-        <Row gutter={[16, 16]} justify="center" style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <Space direction="vertical" size="large" style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
+          {!wallet && (
+            <Alert
+              message="请先连接MetaMask钱包"
+              description="请在页面右上角连接您的MetaMask钱包后即可使用转账和查询功能"
+              type="info"
+              showIcon
+              style={{ marginBottom: '24px' }}
+            />
+          )}
+          
+          <Row gutter={[16, 16]} justify="center">
           <Col xs={24} sm={12}>
             <Card
               hoverable
@@ -91,7 +103,8 @@ function Home() {
               />
             </Card>
           </Col>
-        </Row>
+          </Row>
+        </Space>
       </div>
     </div>
   )
