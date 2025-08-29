@@ -9,6 +9,8 @@ import {
   onChainChanged, 
   removeListener 
 } from '../utils/wallet'
+import { getNetworkName, getNetworkColor, getNetworkIcon } from '../utils/networks'
+import NetworkSwitcher from './NetworkSwitcher'
 
 const { Title, Text, Paragraph } = Typography
 
@@ -115,32 +117,14 @@ const WalletConnect = ({ onWalletChange }) => {
     return parseFloat(balance).toFixed(4)
   }
 
-  // 获取网络显示名称
-  const getNetworkName = (network) => {
-    if (!network) return '未知网络'
-    
-    const networkNames = {
-      1: 'Ethereum 主网',
-      11155111: 'Sepolia 测试网',
-      137: 'Polygon 主网',
-      80001: 'Mumbai 测试网'
+  // 处理网络切换后的更新
+  const handleNetworkChanged = async () => {
+    const walletInfo = await getWalletInfo()
+    if (walletInfo) {
+      setWallet(walletInfo)
+      onWalletChange?.(walletInfo)
+      message.info('网络信息已更新')
     }
-    
-    return networkNames[Number(network.chainId)] || `网络 ${network.chainId}`
-  }
-
-  // 获取网络颜色
-  const getNetworkColor = (network) => {
-    if (!network) return 'default'
-    
-    const networkColors = {
-      1: 'blue',
-      11155111: 'orange', 
-      137: 'purple',
-      80001: 'cyan'
-    }
-    
-    return networkColors[Number(network.chainId)] || 'default'
   }
 
   useEffect(() => {
@@ -262,11 +246,27 @@ const WalletConnect = ({ onWalletChange }) => {
         <Divider style={{ margin: '12px 0' }} />
 
         <div>
-          <Text strong>网络:</Text>
+          <Text strong>网络111:</Text>
           <div style={{ marginTop: '4px' }}>
-            <Tag color={getNetworkColor(wallet.network)}>
-              {getNetworkName(wallet.network)}
+            <Tag color={getNetworkColor(Number(wallet.network?.chainId))}>
+              <Space size="small">
+                <span>{getNetworkIcon(Number(wallet.network?.chainId))}</span>
+                <span>{getNetworkName(Number(wallet.network?.chainId))}</span>
+              </Space>
             </Tag>
+          </div>
+        </div>
+
+        <Divider style={{ margin: '12px 0' }} />
+
+        <div>
+          <Text strong>网络切换:</Text>
+          <div style={{ marginTop: '8px' }}>
+            <NetworkSwitcher 
+              currentNetwork={wallet.network}
+              onNetworkChanged={handleNetworkChanged}
+              disabled={loading}
+            />
           </div>
         </div>
       </Space>

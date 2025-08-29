@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Button, Dropdown, Space, Typography, Tag, message, Spin } from 'antd'
-import { WalletOutlined, DisconnectOutlined, ReloadOutlined, DownOutlined } from '@ant-design/icons'
+import { Button, Dropdown, Space, Typography, Tag, message, Spin, Modal } from 'antd'
+import { WalletOutlined, DisconnectOutlined, ReloadOutlined, DownOutlined, SwapOutlined } from '@ant-design/icons'
 import { 
   connectWallet, 
   checkMetaMaskInstalled, 
@@ -9,6 +9,8 @@ import {
   onChainChanged, 
   removeListener 
 } from '../utils/wallet'
+import { getNetworkName, getNetworkColor, getNetworkIcon } from '../utils/networks'
+import NetworkSwitcher from './NetworkSwitcher'
 
 const { Text } = Typography
 
@@ -16,6 +18,7 @@ const HeaderWallet = ({ onWalletChange }) => {
   const [wallet, setWallet] = useState(null)
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
+  const [networkModalVisible, setNetworkModalVisible] = useState(false)
 
   // 检查现有连接
   const checkExistingConnection = async () => {
@@ -114,32 +117,19 @@ const HeaderWallet = ({ onWalletChange }) => {
     return parseFloat(balance).toFixed(4)
   }
 
-  // 获取网络显示名称
-  const getNetworkName = (network) => {
-    if (!network) return '未知网络'
-    
-    const networkNames = {
-      1: 'Mainnet',
-      11155111: 'Sepolia',
-      137: 'Polygon',
-      80001: 'Mumbai'
-    }
-    
-    return networkNames[Number(network.chainId)] || `Chain ${network.chainId}`
+  // 打开网络切换器模态框
+  const handleOpenNetworkSwitcher = () => {
+    setNetworkModalVisible(true)
   }
 
-  // 获取网络颜色
-  const getNetworkColor = (network) => {
-    if (!network) return 'default'
-    
-    const networkColors = {
-      1: 'blue',
-      11155111: 'orange', 
-      137: 'purple',
-      80001: 'cyan'
+  // 网络切换完成处理
+  const handleNetworkChanged = async () => {
+    const walletInfo = await getWalletInfo()
+    if (walletInfo) {
+      setWallet(walletInfo)
+      onWalletChange?.(walletInfo)
+      setNetworkModalVisible(false)
     }
-    
-    return networkColors[Number(network.chainId)] || 'default'
   }
 
   useEffect(() => {
@@ -223,13 +213,22 @@ const HeaderWallet = ({ onWalletChange }) => {
         <div style={{ padding: '8px 0' }}>
           <Text strong>网络</Text>
           <div style={{ marginTop: '4px' }}>
-            <Tag color={getNetworkColor(wallet.network)} size="small">
-              {getNetworkName(wallet.network)}
+            <Tag color={getNetworkColor(Number(wallet.network?.chainId))} size="small">
+              <Space size="small">
+                <span>{getNetworkIcon(Number(wallet.network?.chainId))}</span>
+                <span>{getNetworkName(Number(wallet.network?.chainId))}</span>
+              </Space>
             </Tag>
           </div>
         </div>
       ),
       disabled: true
+    },
+    {
+      key: 'switch-network',
+      label: '切换网络',
+      icon: <SwapOutlined />,
+      onClick: handleOpenNetworkSwitcher
     },
     { type: 'divider' },
     {
@@ -249,26 +248,43 @@ const HeaderWallet = ({ onWalletChange }) => {
   ]
 
   return (
-    <Dropdown 
-      menu={{ items: dropdownItems }}
-      trigger={['click']}
-      placement="bottomRight"
-    >
-      <Button 
-        type="text" 
-        style={{ 
-          color: '#1890ff',
-          border: '1px solid #1890ff',
-          borderRadius: '6px'
-        }}
+    <>
+      <Dropdown 
+        menu={{ items: dropdownItems }}
+        trigger={['click']}
+        placement="bottomRight"
       >
-        <Space size={4}>
-          <WalletOutlined />
-          <span>{formatAddress(wallet.address)}</span>
-          <DownOutlined style={{ fontSize: '10px' }} />
-        </Space>
-      </Button>
-    </Dropdown>
+        <Button 
+          type="text" 
+          style={{ 
+            color: '#1890ff',
+            border: '1px solid #1890ff',
+            borderRadius: '6px'
+          }}
+        >
+          <Space size={4}>
+            <WalletOutlined />
+            <span>{formatAddress(wallet.address)}</span>
+            <DownOutlined style={{ fontSize: '10px' }} />
+          </Space>
+        </Button>
+      </Dropdown>
+
+      {/* 网络切换模态框 */}
+      <Modal
+        title="切换网络"
+        open={networkModalVisible}
+        onCancel={() => setNetworkModalVisible(false)}
+        footer={null}
+        width={500}
+      >
+        <NetworkSwitcher 
+          currentNetwork={wallet?.network}
+          onNetworkChanged={handleNetworkChanged}
+          disabled={loading}
+        />
+      </Modal>
+    </>
   )
 }
 
